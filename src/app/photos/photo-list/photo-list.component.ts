@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { Photo } from '../photo/photo';
 import { PhotoService } from '../photo/photo.service';
@@ -19,23 +19,30 @@ export class PhotoListComponent implements OnInit {
 
   constructor(
     private _activatedRoute: ActivatedRoute,
-    private _photoService: PhotoService
+    private _photoService: PhotoService,
+    private _router: Router
   ) {}
   
   ngOnInit(): void {
-    this.userName = this._activatedRoute.snapshot.params.userName;
-    this.photos = this._activatedRoute.snapshot.data.photos;
+    this._activatedRoute.params.subscribe(params => {
+      this.userName = params.userName;
+      this.photos = this._activatedRoute.snapshot.data.photos;
+    });
   }
 
   load() {
     this._photoService
       .listFromUserPaginated(this.userName, ++this.currentPage)
-      .subscribe(photos => {
-        this.filter = '';
-        this.photos = this.photos.concat(photos);
-        if(!photos.length) {
-          this.hasMore = false;
-        }
-      });
+      .subscribe(
+        photos => {
+          this.filter = '';
+          this.photos = this.photos.concat(photos);
+          if(!photos.length) {
+            this.hasMore = false;
+          }
+        },
+        err => {
+          this._router.navigate(['not-found']);
+        });
   }
 }
