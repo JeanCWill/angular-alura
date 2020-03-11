@@ -33,7 +33,14 @@ export class PhotoService {
         formData.append('allowComments', allowComments ? 'true' : 'false');
         formData.append('imageFile', file);
 
-        return this._http.post(`${API_URL}/photos/upload`, formData);
+        return this._http.post(
+            `${API_URL}/photos/upload`, 
+            formData,
+            {
+                observe: 'events',
+                reportProgress: true
+            }
+        );
     }
 
     findById(photoId: number): Observable<Photo> {

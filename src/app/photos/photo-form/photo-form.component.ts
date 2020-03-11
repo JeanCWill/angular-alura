@@ -1,9 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { PhotoService } from '../photo/photo.service';
 import { Router } from '@angular/router';
-import { AlertService } from 'src/app/shared/components/alert/alert.service';
+import { HttpEvent, HttpEventType, HttpResponse } from '@angular/common/http';
+import { finalize } from 'rxjs/operators';
+
+import { PhotoService } from '../photo/photo.service';
 import { UserService } from 'src/app/core/user/user.service';
+import { AlertService } from 'src/app/shared/components/alert/alert.service';
 
 @Component({
   selector: 'ap-photo-form',
@@ -15,6 +18,7 @@ export class PhotoFormComponent implements OnInit {
   photoForm: FormGroup;
   file: File;
   preview: string;
+  percentDone: number = 0;
 
   constructor(
     private _formBuilder: FormBuilder,
@@ -38,10 +42,22 @@ export class PhotoFormComponent implements OnInit {
     
     this._photoService
       .upload(description, allowComments, this.file)
-      .subscribe(() => {
-        this._alertService.success('Upload complete', true);
+      .pipe(finalize(() => {
         this._router.navigate(['/user', this._userService.getUserName()]);
-      });
+      }))
+      .subscribe(
+        (event: HttpEvent<any>) => {
+          if (event.type == HttpEventType.UploadProgress) {
+            this.percentDone = Math.round(100 * event.loaded / event.total);
+          } else if (event instanceof HttpResponse) {
+            this._alertService.success('Upload complete', true);
+          }
+        },
+        err => {
+          console.log(err);
+          this._alertService.danger('Uploda error', true);
+        }
+      );
   }
 
   handleFile(file: File) {
